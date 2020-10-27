@@ -47,6 +47,7 @@ class Slack {
         $ourMessageTimestamp = Cache::tags(['Conversation:'.$conversation, 'parent_thread_message_timestamp'])->get($threadTimestamp);
 
         if($ourMessageTimestamp){
+            Cache::increment('spamSaved');
             Log::debug('Initial Message already sent', ['conversation' => $conversation, 'timestamp' => $ourMessageTimestamp]);
             $users = Cache::tags(['Conversation:'.$conversation, 'users'])->get($ourMessageTimestamp);
             if(is_array($users) && !in_array($request->event['user'], $users)){
@@ -58,9 +59,10 @@ class Slack {
         }
 
         $response = $this->sendMessageAsThreadResponse($conversation, $message, $threadTimestamp, $request->event['user']);
-
+        Cache::increment('messagesSent');
         Cache::tags(['Conversation:'.$conversation, 'parent_thread_message_timestamp'])->put($threadTimestamp, $response['ts'], $this->cache_default_ttl);
         Cache::tags(['Conversation:'.$conversation, 'users'])->put($response['ts'], [$request->event['user']], $this->cache_default_ttl);
+
 
         return $response;
 
@@ -78,6 +80,8 @@ class Slack {
             'text' => $message[0]['text']['text'],
             'blocks' => json_encode($message, JSON_THROW_ON_ERROR),
             'link_names' => true,
+            'icon_emoji' => 'zap',
+            'username' => 'ZATech Assistant',
         ];
         return json_decode($this->guzzle->post($this->apiEndpoint.$endpoint, ['form_params' => $payload])->getBody()->getContents(),true);
     }
