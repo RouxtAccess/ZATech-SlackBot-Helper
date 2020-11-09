@@ -38,7 +38,7 @@ return [
                             "Would you be able to rather send them to <https://zatech.co.za|zatech.co.za>?\n" .
                             "That way they can sign themselves up :slightly_smiling_face:\n" .
                             "\n" .
-                            "Have a fantastic day!:slightly_smiling_face:",
+                            "Have a fantastic day! :rocket:",
                         ],
                 ],
             ],
