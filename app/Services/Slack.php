@@ -58,7 +58,7 @@ class Slack {
             return true;
         }
 
-        $response = $this->sendMessageAsThreadResponse($conversation, $message, $threadTimestamp, $request->event['user']);
+        $response = $this->sendMessageAsThreadResponse($conversation, $message, $threadTimestamp, $request->event['user'], $message[0]['text']['text']);
         Cache::increment('messagesSent');
         Cache::tags(['Conversation:'.$conversation, 'parent_thread_message_timestamp'])->put($threadTimestamp, $response['ts'], $this->cache_default_ttl);
         Cache::tags(['Conversation:'.$conversation, 'users'])->put($response['ts'], [$request->event['user']], $this->cache_default_ttl);
@@ -68,7 +68,7 @@ class Slack {
 
     }
 
-    public function sendMessageAsThreadResponse($conversation, $message, $timestamp, $user)
+    public function sendMessageAsThreadResponse($conversation, $message, $timestamp, $user, $text = null, $emoji = 'zap')
     {
         Log::debug('Sending Initial Thread Response', ['conversation' => $conversation, 'timestamp' => $timestamp, 'users' => [$user]]);
         $endpoint = 'chat.postMessage';
@@ -77,10 +77,10 @@ class Slack {
             'token' => $this->bot_oauth_access,
             'channel' => $conversation,
             'thread_ts' => $timestamp,
-            'text' => $message[0]['text']['text'],
+            'text' => $text,
             'blocks' => json_encode($message, JSON_THROW_ON_ERROR),
             'link_names' => true,
-            'icon_emoji' => 'zap',
+            'icon_emoji' => $emoji,
             'username' => 'ZATech Assistant',
         ];
         return json_decode($this->guzzle->post($this->apiEndpoint.$endpoint, ['form_params' => $payload])->getBody()->getContents(),true);
@@ -114,4 +114,35 @@ class Slack {
     }
 
 
+    public function sendMessage($conversation, $text, $blocks, $emoji = 'zap', $threadTimestamp = null, $username = 'ZATech Assistant')
+    {
+        Log::debug('Sending Message', ['conversation' => $conversation]);
+        $endpoint = 'chat.postMessage';
+        $payload = [
+            'token' => $this->bot_oauth_access,
+            'channel' => $conversation,
+            'text' => $text,
+            'blocks' => json_encode($blocks, JSON_THROW_ON_ERROR),
+            'link_names' => true,
+            'icon_emoji' => $emoji,
+            'username' => $username,
+        ];
+        if($threadTimestamp !== null){
+            $payload['thread_ts'] = $threadTimestamp;
+        }
+        return json_decode($this->guzzle->post($this->apiEndpoint.$endpoint, ['form_params' => $payload])->getBody()->getContents(),true);
+    }
+
+    public function addReaction($conversation, $timestamp, $emoji)
+    {
+        Log::debug('Adding Emoji Response', ['conversation' => $conversation, 'timestamp' => $timestamp, 'emoji' => $emoji]);
+        $endpoint = 'reactions.add';
+        $payload = [
+            'token' => $this->bot_oauth_access,
+            'channel' => $conversation,
+            'timestamp' => $timestamp,
+            'name' => $emoji,
+        ];
+        return json_decode($this->guzzle->post($this->apiEndpoint.$endpoint, ['form_params' => $payload])->getBody()->getContents(),true);
+    }
 }
