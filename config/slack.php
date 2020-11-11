@@ -7,7 +7,7 @@ return [
 
     'jobpostings_helper' => [
         'reaction' => 'zap',
-        'channels' => ['C1RAZB24S', 'CA6AG7TKL', 'CQG9U8EBC'],
+        'channels' => ['C1RAZB24S', 'CA6AG7TKL', 'CQG9U8EBC', 'G01DGS44U6R'],
         'blocks' => [
             [
                 'type' => 'section',

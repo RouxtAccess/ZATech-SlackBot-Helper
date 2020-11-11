@@ -18,21 +18,24 @@ class EventsController extends Controller
     public function action(EventsRequest $request)
     {
         // ToDo Challenge Verification
-        if(method_exists($this, 'events_' . $request->type))
-        {
-            return $this->{'events_' . $request->type}($request);
-        }
         if(isset($request->event)
             && is_array($request->event)
             && method_exists($this, 'events_' . $request->event['type']))
         {
             return $this->{'events_' . $request->event['type']}($request);
         }
+        if(method_exists($this, 'events_' . $request->type))
+        {
+            return $this->{'events_' . $request->type}($request);
+        }
+
+        Log::info('Unable to match request to method call', ['request' => $request->all()]);
         return response()->json(['status' => 'error', 'error' => 'unable to find matching action type [events_' . $request->type . ']'], 422);
     }
 
     protected function events_url_verification(EventsRequest $request)
     {
+        Log::info('Url Verification');
         return response()->json(['challenge' => $request->challenge]);
     }
 
@@ -47,7 +50,7 @@ class EventsController extends Controller
         return response()->json(['status' => 'success'], 200);
     }
 
-    protected function events_event_callback(EventsRequest $request)
+    protected function events_message(EventsRequest $request)
     {
         // Invites
         if((isset($request->event['subtype']) === false) && $this->withinArray($request->event['user'],config('slack.invite_helper.users')) && $this->withinArray($request->event['channel'], config('slack.invite_helper.channels')))
